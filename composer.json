@@ -1,0 +1,17 @@
+{
+    "name": "heropoo/session",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "heropoo",
+            "email": "aiyouyou1000@163.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "Moon\\Session\\": "./"
+        }
+    }
+}
