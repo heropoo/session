@@ -16,20 +16,16 @@ class Session
 
     protected $isStarted = false;
 
-    protected $savePath;
-
     protected $maxLifetime;
+
+    /** @var DriverInterface $driver */
+    protected $driver;
 
     public function __construct($name, $id, $cookieParams, $config)
     {
         $this->name = $name;
         $this->id = $id;
         $this->cookieParams = $cookieParams;
-        if (isset($config['save_path'])) {
-            $this->savePath = $config['save_path'];
-        } else {
-            $this->savePath = \App::$instance->getRootPath() . '/runtime/sessions';
-        }
         if (isset($config['cookie_lifetime'])) {
             $this->cookieParams['lifetime'] = time() + $config['cookie_lifetime'];
             $this->maxLifetime = $config['cookie_lifetime'];
@@ -44,6 +40,20 @@ class Session
             if (in_array($cookieKey, ['path', 'domain', 'secure', 'httponly', 'samesite'])) {
                 $this->cookieParams[$cookieKey] = $value;
             }
+        }
+
+        if ($config['driver'] == 'redis') {
+//            $this->driver = new RedisDriver([
+//                'id' => $this->id,
+            //'savePath' => $config['savePath'],
+            //'maxLifetime' => $this->maxLifetime
+//            ]);
+        } else {
+            $this->driver = new FileDriver([
+                'id' => $this->id,
+                'savePath' => $config['savePath'],
+                'maxLifetime' => $this->maxLifetime
+            ]);
         }
     }
 
@@ -62,14 +72,14 @@ class Session
         return $this->cookieParams;
     }
 
-    public function getData()
+    public function all()
     {
         return $this->data;
     }
 
     public function get($key)
     {
-        return $this->data[$key] ?? null;
+        return isset($this->data[$key]) ? $this->data[$key] : null;
     }
 
     public function set($key, $value)
@@ -85,7 +95,7 @@ class Session
     public function destroy()
     {
         $this->data = null;
-        @unlink($this->savePath . '/' . $this->getId());
+        $this->driver->destroy();
     }
 
     public function start()
@@ -99,38 +109,16 @@ class Session
 
     public function load()
     {
-        if (mt_rand(1, 1000) == 1) {
-            $this->gc();
-        }
-
-        //todo other driver
-        if (!is_dir($this->savePath)) {
-            mkdir($this->savePath, 0777, true);
-        }
-        $filename = $this->savePath . '/' . $this->getId();
-        if (file_exists($filename)) {
-            $data = file_get_contents($filename);
-            $this->data = unserialize($data);
-        }
+        $this->data = $this->driver->load();
     }
 
     public function write()
     {
-        if (is_dir($this->savePath)) {
-            @mkdir($this->savePath, 0777, true);
-        }
-        $filename = $this->savePath . '/' . $this->getId();
-        file_put_contents($filename, serialize($this->data));
+        $this->driver->write($this->data);
     }
 
     function gc()
     {
-        foreach (glob("$this->savePath/*") as $file) {
-            if (filemtime($file) + $this->maxLifetime < time() && file_exists($file)) {
-                unlink($file);
-            }
-        }
-
-        return true;
+        $this->driver->gc();
     }
 }
