@@ -8,7 +8,9 @@
             "email": "aiyouyou1000@163.com"
         }
     ],
-    "require": {},
+    "require": {
+        "predis/predis": "^1.1"
+    },
     "autoload": {
         "psr-4": {
             "Moon\\Session\\": "./"

@@ -13,7 +13,5 @@ interface DriverInterface
 
     public function write($data);
 
-    public function gc();
-
     public function destroy();
 }

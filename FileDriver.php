@@ -14,7 +14,7 @@ class FileDriver implements DriverInterface
     /** @var string $id session_id */
     protected $id;
 
-    protected $maxLifetime;
+    protected $lifetime;
 
     public function __construct(array $options)
     {
@@ -63,7 +63,7 @@ class FileDriver implements DriverInterface
     public function gc()
     {
         foreach (glob("$this->savePath/*") as $file) {
-            if (filemtime($file) + $this->maxLifetime < time() && file_exists($file)) {
+            if (filemtime($file) + $this->lifetime < time() && file_exists($file)) {
                 unlink($file);
             }
         }

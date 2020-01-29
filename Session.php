@@ -7,6 +7,8 @@
 namespace Moon\Session;
 
 
+use Predis\Client;
+
 class Session
 {
     protected $name;
@@ -16,7 +18,7 @@ class Session
 
     protected $isStarted = false;
 
-    protected $maxLifetime;
+    protected $lifetime;
 
     /** @var DriverInterface $driver */
     protected $driver;
@@ -28,11 +30,11 @@ class Session
         $this->cookieParams = $cookieParams;
         if (isset($config['cookie_lifetime'])) {
             $this->cookieParams['lifetime'] = time() + $config['cookie_lifetime'];
-            $this->maxLifetime = $config['cookie_lifetime'];
+            $this->lifetime = $config['cookie_lifetime'];
             unset($config['cookie_lifetime']);
         } else {
             $this->cookieParams['lifetime'] = time() + 3600;
-            $this->maxLifetime = 3600;
+            $this->lifetime = 3600;
         }
 
         foreach ($config as $key => $value) {
@@ -43,16 +45,17 @@ class Session
         }
 
         if ($config['driver'] == 'redis') {
-//            $this->driver = new RedisDriver([
-//                'id' => $this->id,
-            //'savePath' => $config['savePath'],
-            //'maxLifetime' => $this->maxLifetime
-//            ]);
+            /** @var Client $client */
+            $client = $config['client']; //todo
+            $this->driver = new RedisDriver($client, [
+                'id' => $this->id,
+                'lifetime' => $this->lifetime
+            ]);
         } else {
             $this->driver = new FileDriver([
                 'id' => $this->id,
                 'savePath' => $config['savePath'],
-                'maxLifetime' => $this->maxLifetime
+                'lifetime' => $this->lifetime
             ]);
         }
     }
@@ -119,6 +122,8 @@ class Session
 
     function gc()
     {
-        $this->driver->gc();
+        if (method_exists($this->driver, 'gc')) {
+            $this->driver->gc();
+        }
     }
 }
