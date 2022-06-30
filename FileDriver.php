@@ -27,7 +27,7 @@ class FileDriver implements DriverInterface
 
     public function write($data)
     {
-        if (is_dir($this->savePath)) {
+        if (!is_dir($this->savePath)) {
             @mkdir($this->savePath, 0777, true);
         }
         $filename = $this->savePath . '/' . $this->id;
